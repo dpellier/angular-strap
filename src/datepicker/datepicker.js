@@ -105,12 +105,16 @@ angular.module('mgcrea.ngStrap.datepicker', ['mgcrea.ngStrap.helpers.dateParser'
 
         $datepicker.$updateSelected = function() {
           for(var i = 0, l = scope.rows.length; i < l; i++) {
-            angular.forEach(scope.rows[i], updateSelected);
+            angular.forEach(scope.rows[i], updateSelectedAndMuted);
           }
         };
 
         $datepicker.$isSelected = function(date) {
           return $picker.isSelected(date);
+        };
+
+        $datepicker.$isDisabled = function (date) {
+          return $picker.isDisabled(date);
         };
 
         $datepicker.$selectPane = function(value) {
@@ -154,8 +158,9 @@ angular.module('mgcrea.ngStrap.datepicker', ['mgcrea.ngStrap.helpers.dateParser'
 
         // Private
 
-        function updateSelected(el) {
+        function updateSelectedAndMuted(el) {
           el.selected = $datepicker.$isSelected(el.date);
+          el.muted = $datepicker.$isDisabled(el.date);
         }
 
         function focusElement() {
@@ -244,16 +249,17 @@ angular.module('mgcrea.ngStrap.datepicker', ['mgcrea.ngStrap.helpers.dateParser'
           // console.warn('attr.$observe(%s)', key, attr[key]);
           angular.isDefined(attr[key]) && attr.$observe(key, function(newValue) {
             // console.warn('attr.$observe(%s)=%o', key, newValue);
-            if(newValue === 'today') {
+            var keyDate = null;
+            if (newValue === 'today') {
               var today = new Date();
-              datepicker.$options[key] = +new Date(today.getFullYear(), today.getMonth(), today.getDate() + (key === 'maxDate' ? 1 : 0), 0, 0, 0, (key === 'minDate' ? 0 : -1));
-            } else if(angular.isString(newValue) && newValue.match(/^".+"$/)) {
-              datepicker.$options[key] = +new Date(newValue.substr(1, newValue.length - 2));
+              keyDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + (key === 'maxDate' ? 1 : 0), 0, 0, 0, key === 'minDate' ? 0 : -1);
+            } else if (angular.isString(newValue) && newValue.match(/^".+"$/)) {
+              keyDate = new Date(newValue.substr(1, newValue.length - 2));
             } else {
-              datepicker.$options[key] = +new Date(newValue);
+              keyDate = new Date(newValue);
             }
-            // console.warn(angular.isDate(newValue), newValue);
-            !isNaN(datepicker.$options[key]) && datepicker.$build();
+            datepicker.$options[key] = +keyDate;
+            !isNaN(datepicker.$options[key]) && datepicker.update(keyDate);
           });
         });
 
